@@ -4,7 +4,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.blessedmusicalturkeys.project-release-notes</groupId>
+  <groupId>io.github.blessedmusicalturkeys</groupId>
   <artifactId>project-release-notes</artifactId>
   <version>0.0.0</version>
   <name>projectreleasenotes</name>
@@ -27,6 +27,9 @@
     <developerConnection>scm:git:ssh://github.com:blessedmusicalturkeys/project-release-notes.git</developerConnection>
     <url>https://github.com/blessedmusicalturkeys/project-release-notes/tree/main</url>
   </scm>
+  <distributionManagement>
+    ....
+  </distributionManagement>
 
   <properties>
     <java.version>17</java.version>
