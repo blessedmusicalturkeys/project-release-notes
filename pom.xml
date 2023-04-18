@@ -131,6 +131,9 @@
             <goals>
               <goal>jar</goal>
             </goals>
+            <configuration>
+              <sourcepath>src/main/java</sourcepath>
+            </configuration>
           </execution>
         </executions>
       </plugin>
