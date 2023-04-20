@@ -44,7 +44,7 @@ $ java -cp target/dependency/project-release-notes-0.0.1.jar com.blessedmusicalt
 
 ## Gradle
 ```groovy
-compile group: 'io.github.blessedmusicalturkeys', name: 'project-release-notes', version: '0.0.0'
+compile group: 'io.github.blessedmusicalturkeys', name: 'project-release-notes', version: '0.0.1'
 ```
 
 # Shout Outs!
