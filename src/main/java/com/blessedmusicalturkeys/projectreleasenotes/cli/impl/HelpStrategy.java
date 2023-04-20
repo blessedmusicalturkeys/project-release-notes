@@ -22,9 +22,9 @@ public class HelpStrategy implements CLIStrategy {
 
     output.append("Usage: ").append("\n");
     output.append("\tjava -cp project-release-notes.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication (-h | --help)").append("\n");
-    output.append("\tjava -cp project-release-notes.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication (-c | --changelog)").append("\n");
-    output.append("\tjava -cp project-release-notes.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication (-c | --changelog) <tag-to-generate-changelog-for>").append("\n");
-    output.append("\tjava -cp project-release-notes.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication (-c | --changelog) <from-tag> <to-tag>").append("\n");
+    output.append("\tjava -cp project-release-notes.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication (-c | --changelog) --incrementVersion=(MAJOR | MINOR | PATCH)").append("\n");
+    output.append("\tjava -cp project-release-notes.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication (-c | --changelog) --tag=<tag-name").append("\n");
+    output.append("\tjava -cp project-release-notes.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication (-c | --changelog) --full").append("\n");
     output.append("\tjava -cp project-release-notes.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication (-t | --tag) <tag-name>").append("\n");
     output.append("\tjava -cp project-release-notes.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication (-r | --release-notes) <email-to-send-release-notes-to> [<space-delimited-emails-to-send-release-notes-to>...]").append("\n");
 

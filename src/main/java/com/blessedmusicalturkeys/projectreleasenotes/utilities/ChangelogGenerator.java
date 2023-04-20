@@ -17,7 +17,7 @@ import net.steppschuh.markdowngenerator.text.heading.Heading;
  */
 public class ChangelogGenerator {
 
-  public void generateChangelogFromExisting(String releaseName, List<Issue> issues) throws IOException {
+  public void generateChangelogFromExisting(File repoDir, String releaseName, List<Issue> issues) throws IOException {
     StringBuilder changelogBuilder = new StringBuilder();
 
     changelogBuilder.append(new Heading("Release " + releaseName, 1)).append("\n");
@@ -42,16 +42,16 @@ public class ChangelogGenerator {
       }
     }
 
-    writeChangeLog(changelogBuilder.toString(), ApplicationConstants.CONST_PREPEND_TO_CHANGELOG);
+    writeChangeLog(repoDir, changelogBuilder.toString(), ApplicationConstants.CONST_PREPEND_TO_CHANGELOG);
   }
 
-  public void writeChangeLog(String fileContent, boolean... prepend) throws IOException {
-    File changelogDirectory = new File("./changelog");
-    changelogDirectory.mkdirs();
+  public void writeChangeLog(File repoDir, String fileContent, boolean... prepend) throws IOException {
+    File changelogDirectory = new File(repoDir.getAbsolutePath() + "/changelog");
+    boolean changelogDirExists = changelogDirectory.mkdirs();
     File changelogFile = new File(changelogDirectory, "changelog.md");
     boolean changelogFileExists = changelogFile.createNewFile();
 
-    if (!changelogFileExists && prepend != null && prepend[0]) {
+    if (changelogDirExists && !changelogFileExists && prepend != null && prepend[0]) {
       FileInputStream fis = new FileInputStream(changelogFile);
       byte[] buffer = new byte[10];
       StringBuilder sb = new StringBuilder();

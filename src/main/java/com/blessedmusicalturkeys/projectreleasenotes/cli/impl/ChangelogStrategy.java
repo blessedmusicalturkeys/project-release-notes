@@ -2,6 +2,7 @@ package com.blessedmusicalturkeys.projectreleasenotes.cli.impl;
 
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.blessedmusicalturkeys.projectreleasenotes.cli.CLIStrategy;
+import com.blessedmusicalturkeys.projectreleasenotes.constants.SemanticVersion;
 import com.blessedmusicalturkeys.projectreleasenotes.utilities.ChangelogGenerator;
 import com.blessedmusicalturkeys.projectreleasenotes.utilities.JGit;
 import com.blessedmusicalturkeys.projectreleasenotes.utilities.JiraClient;
@@ -26,10 +27,6 @@ public class ChangelogStrategy implements CLIStrategy {
 
   @Override
   public void handleRequest(String... inputArgument) {
-    int numOfInputArguments = inputArgument.length;
-
-    Integer fromTagIndex = Integer.valueOf(1);
-    Integer toTagIndex = Integer.valueOf(0);
 
     JGit gitClient;
     JiraClient jiraClient;
@@ -44,6 +41,85 @@ public class ChangelogStrategy implements CLIStrategy {
       throw new RuntimeException(e);
     }
 
+    List<String> tags  = getAllTags(gitClient);
+
+    String tagName = processGenerateChangelogRequest(gitClient, jiraClient, changelogGenerator, tags, inputArgument);
+
+    try {
+      gitClient.commitChangelogTagAndPush(tagName);
+    } catch (GitAPIException | IOException e) {
+      System.out.println("Unable to commit the changelog due to: [" + e.getMessage() + "]");
+      throw new RuntimeException(e);
+    }
+  }
+
+  private String processGenerateChangelogRequest(JGit gitClient, JiraClient jiraClient, ChangelogGenerator changelogGenerator,
+      List<String> tags, String... inputArgument) {
+    String tagName;
+    int numOfInputArguments = inputArgument.length;
+
+    try {
+      if (numOfInputArguments == 2 && inputArgument[1].startsWith("--incrementVersion")) {
+        String versioningStrategy = inputArgument[1].split("--incrementVersion=")[1];
+        List<String> issueKeys = gitClient.getAllIssuesSenseLastTag();
+
+        tagName = incrementReleaseNumber(tags, versioningStrategy);
+
+        generateChangelog(gitClient, jiraClient, changelogGenerator, tagName, issueKeys);
+      } else if (numOfInputArguments == 2 && inputArgument[1].startsWith("--tag")) {
+        String tagToGenerateChangelogFor = inputArgument[1].split("--tag=")[1];
+        int tagIndex = tags.indexOf(tagToGenerateChangelogFor);
+        tagName = tags.get(tagIndex);
+
+        List<String> issueKeys = gitClient.getIssuesWithinTag(tagName);
+
+        generateChangelog(gitClient, jiraClient, changelogGenerator, tagName, issueKeys);
+      } else if (numOfInputArguments == 2 && inputArgument[1].startsWith("--full")) {
+        for (String tag : tags) {
+          List<String> issueKeys = gitClient.getIssuesWithinTag(tag);
+
+          generateChangelog(gitClient, jiraClient, changelogGenerator, tag, issueKeys);
+        }
+        tagName = "full-changelog-generation";
+      } else {
+        System.out.println("Unsupported Operation requested. Rerun with `--help` option to see available operations");
+        throw new RuntimeException("Unsupported Operation");
+      }
+    } catch (GitAPIException | IOException e) {
+      System.out.println("Unable to generate the changelog due to: [" + e.getMessage() + "]");
+      throw new RuntimeException(e);
+    }
+
+    return tagName;
+  }
+
+  private String incrementReleaseNumber(List<String> tags, String versioningStrategy) {
+    String tagName = null;
+    SemanticVersion incrementVersionBy;
+    try {
+      incrementVersionBy = SemanticVersion.valueOf(versioningStrategy);
+    } catch (IllegalArgumentException e) {
+      System.out.println("Version flag must equal: `MAJOR`, `MINOR`, or `PATCH`");
+      throw new RuntimeException("Unsupported Versioning Strategy");
+    }
+
+    String[] lastTag = tags.get(tags.size()-1).split("\\.");
+
+    if (SemanticVersion.MAJOR == incrementVersionBy) {
+      int majorVersion = Integer.parseInt(lastTag[0])+1;
+      tagName = majorVersion + ".0.0";
+    } else if (SemanticVersion.MINOR == incrementVersionBy) {
+      int minorVersion = Integer.parseInt(lastTag[1])+1;
+      tagName = lastTag[0] + "." + minorVersion + ".0";
+    } else if (SemanticVersion.PATCH == incrementVersionBy) {
+      int patchVersion = Integer.parseInt(lastTag[2])+1;
+      tagName = lastTag[0] + "." + lastTag[1] + "." + patchVersion;
+    }
+
+    return tagName;
+  }
+
+  private List<String> getAllTags(JGit gitClient) {
     List<String> tags;
     try {
       tags = gitClient.listTags();
@@ -52,30 +128,13 @@ public class ChangelogStrategy implements CLIStrategy {
       throw new RuntimeException(e);
     }
     Collections.reverse(tags);
+    return tags;
+  }
 
-    if (numOfInputArguments == 2) {
-      toTagIndex = tags.indexOf(inputArgument[1]);
-      fromTagIndex = toTagIndex + 1;
-    } else if (numOfInputArguments == 3) {
-      fromTagIndex = tags.indexOf(inputArgument[1]);
-      toTagIndex = tags.indexOf(inputArgument[2]);
-    }
+  private void generateChangelog(JGit gitClient, JiraClient jiraClient, ChangelogGenerator changelogGenerator, String tagName, List<String> jiraIssueKeys)
+      throws IOException {
+    List<Issue> jiraIssues = jiraClient.getIssueList(jiraIssueKeys);
 
-    if (fromTagIndex == -1 || toTagIndex == -1) {
-      System.out.println("The provided tag(s) are invalid. Please make sure that you're providing tags that exist in Source Control");
-      return;
-    }
-
-    try {
-      List<String> issueKeys = gitClient.getIssuesAddressedSinceLastTag(tags.get(fromTagIndex),
-          tags.get(toTagIndex));
-
-      List<Issue> jiraIssues = jiraClient.getIssueList(issueKeys);
-
-      changelogGenerator.generateChangelogFromExisting(tags.get(toTagIndex), jiraIssues);
-    } catch (GitAPIException | IOException e) {
-      System.out.println("Unable to generate the changelog due to: [" + e.getMessage() + "]");
-      throw new RuntimeException(e);
-    }
+    changelogGenerator.generateChangelogFromExisting(gitClient.getWorkingDir(), tagName, jiraIssues);
   }
 }

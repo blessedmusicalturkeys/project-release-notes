@@ -1,10 +1,7 @@
 package com.blessedmusicalturkeys.projectreleasenotes;
 
 import com.blessedmusicalturkeys.projectreleasenotes.cli.CLIStrategy;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
-import org.eclipse.jgit.api.errors.GitAPIException;
 
 /**
  * Entry point for the application which uses strategy pattern to determine how the request should be handled.
