@@ -32,6 +32,7 @@ public class ChangelogStrategy implements CLIStrategy {
     JiraClient jiraClient;
     ChangelogGenerator changelogGenerator;
 
+    System.out.println("Initializing the System...");
     try {
       gitClient = new JGit();
       jiraClient = new JiraClient();
@@ -41,16 +42,21 @@ public class ChangelogStrategy implements CLIStrategy {
       throw new RuntimeException(e);
     }
 
+    System.out.println("Pulling all existing tags...");
     List<String> tags  = getAllTags(gitClient);
 
+    System.out.println("Generating changelog...");
     String tagName = processGenerateChangelogRequest(gitClient, jiraClient, changelogGenerator, tags, inputArgument);
 
+    System.out.println("Committing changelog to new tag, merging to the make working trunk, and pushing...");
     try {
       gitClient.commitChangelogTagAndPush(tagName);
     } catch (GitAPIException | IOException e) {
       System.out.println("Unable to commit the changelog due to: [" + e.getMessage() + "]");
       throw new RuntimeException(e);
     }
+
+    System.out.println("Changelog Generation Complete.");
   }
 
   private String processGenerateChangelogRequest(JGit gitClient, JiraClient jiraClient, ChangelogGenerator changelogGenerator,
