@@ -105,8 +105,14 @@ public class ChangelogStrategy implements CLIStrategy {
     try {
       incrementVersionBy = SemanticVersion.valueOf(versioningStrategy);
     } catch (IllegalArgumentException e) {
-      System.out.println("Version flag must equal: `MAJOR`, `MINOR`, or `PATCH`");
-      throw new RuntimeException("Unsupported Versioning Strategy");
+      String semanticVersioningRegex = "^([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+[0-9A-Za-z-]+)?$";
+
+      if (versioningStrategy.matches(semanticVersioningRegex)) {
+        return versioningStrategy;
+      } else {
+        System.out.println("Version flag must equal: `MAJOR`, `MINOR`, `PATCH`, or provide an explicit semantic version, e.g. 1.2.3");
+        throw new RuntimeException("Unsupported Versioning Strategy");
+      }
     }
 
     String[] lastTag = tags.get(tags.size()-1).split("\\.");

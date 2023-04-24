@@ -1,4 +1,7 @@
-# project-release-notes
+# Project Release Notes Home @github
+
+
+## What is Project Release Notes
 
 project-release-notes is a command-line base application that will allow users to generate release notes, changelogs, and more for their project via simple java commands
 
@@ -10,7 +13,7 @@ steps:
     image: maven:3.8.5-openjdk-17-slim
     commands:
       - mvn clean dependency:copy-dependencies
-      - java -cp target/dependency/project-release-notes-0.0.2.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication -c --incrementVersion=PATCH
+      - java -cp target/dependency/project-release-notes-0.0.3.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication -c --incrementVersion=PATCH
     environment:
       GIT_PRIVATE_KEY: ${GIT_PRIVATE_KEY}
       GIT_REPO_URL: ${GIT_REPO_URL}
@@ -27,7 +30,7 @@ steps:
 $ cd <project root directory wtih project-release-notes as a pom dependency>
 $ <export the necessary environment variables (see above drone variables), or have them setup in your environment already>
 $ mvn clean dependency:copy-dependencies
-$ java -cp target/dependency/project-release-notes-0.0.2.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication -c --incrementVersion=PATCH
+$ java -cp target/dependency/project-release-notes-0.0.3.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication -c --incrementVersion=PATCH
 ```
 
 # Dependency
@@ -38,13 +41,13 @@ $ java -cp target/dependency/project-release-notes-0.0.2.jar com.blessedmusicalt
 <dependency>
   <groupId>io.github.blessedmusicalturkeys</groupId>
   <artifactId>project-release-notes</artifactId>
-  <version>0.0.2</version>
+  <version>0.0.3</version>
 </dependency>
 ```
 
 ## Gradle
 ```groovy
-compile group: 'io.github.blessedmusicalturkeys', name: 'project-release-notes', version: '0.0.2'
+compile group: 'io.github.blessedmusicalturkeys', name: 'project-release-notes', version: '0.0.3'
 ```
 
 # Shout Outs!
