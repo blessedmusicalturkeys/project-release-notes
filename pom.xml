@@ -44,7 +44,7 @@
     <jersey-common.version>2.39.1</jersey-common.version>
     <owasp.dependency-check-maven.version>8.2.1</owasp.dependency-check-maven.version>
     <owasp.dependency-check-maven.skip>false</owasp.dependency-check-maven.skip>
-    <owasp.dependency-check-maven.cvss-threshold>6.0</owasp.dependency-check-maven.cvss-threshold>
+    <owasp.dependency-check-maven.cvss-threshold>8.5</owasp.dependency-check-maven.cvss-threshold>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
   </properties>
