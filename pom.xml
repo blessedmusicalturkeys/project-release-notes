@@ -183,10 +183,7 @@
         <version>${owasp.dependency-check-maven.version}</version>
         <configuration>
           <skip>${owasp.dependency-check-maven.skip}</skip>
-          <suppressionFile>owasp/owasp-suppressions.xml</suppressionFile>
           <failBuildOnCVSS>${owasp.dependency-check-maven.cvss-threshold}</failBuildOnCVSS>
-          <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
-          <centralAnalyzerEnabled>false</centralAnalyzerEnabled>
         </configuration>
         <executions>
           <execution>
