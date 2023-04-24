@@ -6,7 +6,7 @@
 
   <groupId>io.github.blessedmusicalturkeys</groupId>
   <artifactId>project-release-notes</artifactId>
-  <version>0.0.3</version>
+  <version>0.0.4</version>
   <name>projectreleasenotes</name>
   <description>projectreleasenotes</description>
   <url>https://github.com/blessedmusicalturkeys/project-release-notes</url>
@@ -37,7 +37,7 @@
 
   <properties>
     <java.version>17</java.version>
-    <jira-rest-java-client-core.version>5.2.4</jira-rest-java-client-core.version>
+    <jira-rest-java-client-core.version>5.2.5</jira-rest-java-client-core.version>
     <fugue.version>5.0.0</fugue.version>
     <org.eclipse.jgit.version>6.5.0.202303070854-r</org.eclipse.jgit.version>
     <javax.ws.rs-api.version>2.1.1</javax.ws.rs-api.version>
