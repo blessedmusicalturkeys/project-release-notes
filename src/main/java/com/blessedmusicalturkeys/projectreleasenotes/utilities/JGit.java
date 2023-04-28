@@ -30,6 +30,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.SshTransport;
 import org.eclipse.jgit.transport.Transport;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory;
 import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig;
 import org.eclipse.jgit.util.FS;
@@ -42,6 +43,8 @@ import org.eclipse.jgit.util.FS;
 public class JGit {
 
   private final String gitPrivateKey;
+  private final Git git;
+  private final File workingDir;
 
   private final String CONST_MERGE_PREAMBLE = "Merged in";
 
@@ -54,19 +57,42 @@ public class JGit {
           "bugfix/", "bugfixes/",
           "release/", "releases/");
 
-  private final Git git;
-  private final File workingDir;
-
   public JGit() throws IOException, GitAPIException {
+    this.workingDir = Files.createTempDirectory("workspace").toFile();
     this.gitPrivateKey = ApplicationConstants.CONST_GIT_REPOSITORY_PRIVATE_KEY;
 
-    this.workingDir = Files.createTempDirectory("workspace").toFile();
+    String gitUsername = ApplicationConstants.CONST_GIT_USERNAME;
+    String gitPassword = ApplicationConstants.CONST_GIT_PASSWORD;
 
-    git = Git.cloneRepository()
-      .setDirectory(workingDir)
-      .setTransportConfigCallback(new SshTransportConfigCallback())
-      .setURI(ApplicationConstants.CONST_GIT_REPOSITORY_URL)
-      .call();
+    if (this.gitPrivateKey != null && ApplicationConstants.CONST_GIT_REPOSITORY_URL != null
+        && ApplicationConstants.CONST_GIT_REPOSITORY_URL.startsWith("git@")) { //ssh connection starts with `git@`
+      git = Git.cloneRepository()
+          .setDirectory(workingDir)
+          .setTransportConfigCallback(new SshTransportConfigCallback())
+          .setURI(ApplicationConstants.CONST_GIT_REPOSITORY_URL)
+          .call();
+    } else if (gitUsername != null && gitPassword != null && ApplicationConstants.CONST_GIT_REPOSITORY_URL != null
+        && ApplicationConstants.CONST_GIT_REPOSITORY_URL.startsWith("https://")){
+      git = Git.cloneRepository()
+          .setDirectory(workingDir)
+          .setURI(ApplicationConstants.CONST_GIT_REPOSITORY_URL)
+          .setCredentialsProvider(
+              new UsernamePasswordCredentialsProvider(ApplicationConstants.CONST_GIT_USERNAME,
+                  ApplicationConstants.CONST_GIT_PASSWORD))
+          .call();
+    } else {
+      System.out.println("GIT usage:");
+      System.out.println();
+      System.out.println("    SSH or HTTPS only.");
+      System.out.println();
+      System.out.println("    For SSH:");
+      System.out.println("        Must provide env vars GIT_PRIVATE_KEY and GIT_REPO_URL. GIT_REPO_URL must start with `git@` for `git@<domain>/<repository>.git");
+      System.out.println();
+      System.out.println("    For HTTP:");
+      System.out.println("        Must provide env vars GIT_USERNAME, GIT_PASSWORD, and GIT_REPO_URL. GIT_REPO_URL must start with `https://` for `https://<domain>/<repository>.git");
+
+      throw new RuntimeException("Unsupported GIT Operation");
+    }
 
     git.checkout().setName(ApplicationConstants.CONST_GIT_WORKING_TRUNK_TO_BRANCH_FROM).call();
   }
@@ -105,9 +131,11 @@ public class JGit {
     commits = git.log().call();
     for (RevCommit commit : commits) {
       if (commit.getAuthorIdent().getWhen().compareTo(dateOfLastTag) > 0
-          && commit.getShortMessage().contains(CONST_MERGE_PREAMBLE)
-          && commit.getShortMessage().contains(ApplicationConstants.CONST_JIRA_PROJECT_KEY)) {
-        issues.add(parseIssueKeyFromCommit(commit));
+          && commit.getShortMessage().contains(CONST_MERGE_PREAMBLE)) {
+        assert ApplicationConstants.CONST_JIRA_PROJECT_KEY != null;
+        if (commit.getShortMessage().contains(ApplicationConstants.CONST_JIRA_PROJECT_KEY)) {
+          issues.add(parseIssueKeyFromCommit(commit));
+        }
       }
     }
 

@@ -5,6 +5,8 @@ import com.blessedmusicalturkeys.projectreleasenotes.utilities.EnvironmentVariab
 public class ApplicationConstants {
   public static final String CONST_GIT_REPOSITORY_URL = EnvironmentVariables.getString("GIT_REPO_URL");
   public static final String CONST_GIT_REPOSITORY_PRIVATE_KEY = EnvironmentVariables.getBase64EncodedString("GIT_PRIVATE_KEY");
+  public static final String CONST_GIT_USERNAME = EnvironmentVariables.getString("GIT_USERNAME");
+  public static final String CONST_GIT_PASSWORD = EnvironmentVariables.getString("GIT_PASSWORD");
   public static final String CONST_GIT_WORKING_TRUNK_TO_BRANCH_FROM = EnvironmentVariables.getString("GIT_WORKING_TRUNK");
 
   public static final String CONST_JIRA_BASE_URL = EnvironmentVariables.getString("JIRA_URL");

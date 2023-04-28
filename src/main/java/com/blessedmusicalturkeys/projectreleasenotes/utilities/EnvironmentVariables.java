@@ -1,6 +1,7 @@
 package com.blessedmusicalturkeys.projectreleasenotes.utilities;
 
 import java.util.Base64;
+import org.apache.commons.lang3.ObjectUtils.Null;
 
 /**
  * Simple Environment Vars getter
@@ -9,12 +10,20 @@ import java.util.Base64;
  */
 public class EnvironmentVariables {
   public static String getString(String variableName) {
-    return System.getenv(variableName);
+    try {
+      return System.getenv(variableName);
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   public static String getBase64EncodedString(String variableName) {
     String encodedVariable = System.getenv(variableName);
-    return new String(Base64.getDecoder().decode(encodedVariable));
+    try {
+      return new String(Base64.getDecoder().decode(encodedVariable));
+    } catch (NullPointerException e) {
+      return null;
+    }
   }
 
   public static Integer getInt(String variableName) {
