@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.MissingObjectException;
 
@@ -18,6 +19,7 @@ import org.eclipse.jgit.errors.MissingObjectException;
  *
  * @author Timothy Stratton
  */
+@Slf4j
 public class ChangelogStrategy implements CLIStrategy {
 
   @Override
@@ -27,36 +29,37 @@ public class ChangelogStrategy implements CLIStrategy {
 
   @Override
   public void handleRequest(String... inputArgument) {
+    log.info("Changelog Generation request received...");
 
     JGit gitClient;
     JiraClient jiraClient;
     ChangelogGenerator changelogGenerator;
 
-    System.out.println("Initializing the System...");
+    log.info("Initializing the System...");
     try {
       gitClient = new JGit();
       jiraClient = new JiraClient();
       changelogGenerator = new ChangelogGenerator();
     } catch (GitAPIException | IOException | URISyntaxException e) {
-      System.out.println("Initialization exception: [" + e.getMessage() + "]");
+      log.error("Initialization exception: [{}]", e.getMessage(), e);
       throw new RuntimeException(e);
     }
 
-    System.out.println("Pulling all existing tags...");
+    log.info("Pulling all existing tags...");
     List<String> tags  = getAllTags(gitClient);
 
-    System.out.println("Generating changelog...");
+    log.info("Generating changelog...");
     String tagName = processGenerateChangelogRequest(gitClient, jiraClient, changelogGenerator, tags, inputArgument);
 
-    System.out.println("Committing changelog to new tag, merging to the make working trunk, and pushing...");
+    log.info("Committing changelog to new tag, merging to the make working trunk, and pushing...");
     try {
       gitClient.commitChangelogTagAndPush(tagName);
     } catch (GitAPIException | IOException e) {
-      System.out.println("Unable to commit the changelog due to: [" + e.getMessage() + "]");
+      log.error("Unable to commit the changelog due to: [{}]", e.getMessage(), e);
       throw new RuntimeException(e);
     }
 
-    System.out.println("Changelog Generation Complete.");
+    log.info("Changelog Generation Complete.");
   }
 
   private String processGenerateChangelogRequest(JGit gitClient, JiraClient jiraClient, ChangelogGenerator changelogGenerator,
@@ -67,7 +70,7 @@ public class ChangelogStrategy implements CLIStrategy {
     try {
       if (numOfInputArguments == 2 && inputArgument[1].startsWith("--incrementVersion")) {
         String versioningStrategy = inputArgument[1].split("--incrementVersion=")[1];
-        List<String> issueKeys = gitClient.getAllIssuesSenseLastTag();
+        List<String> issueKeys = gitClient.getAllIssuesSinceLastTag();
 
         tagName = incrementReleaseNumber(tags, versioningStrategy);
 
@@ -88,11 +91,11 @@ public class ChangelogStrategy implements CLIStrategy {
         }
         tagName = "full-changelog-generation";
       } else {
-        System.out.println("Unsupported Operation requested. Rerun with `--help` option to see available operations");
+        log.info("Unsupported Operation requested. Rerun with `--help` option to see available operations");
         throw new RuntimeException("Unsupported Operation");
       }
     } catch (GitAPIException | IOException e) {
-      System.out.println("Unable to generate the changelog due to: [" + e.getMessage() + "]");
+      log.error("Unable to generate the changelog due to: [{}]", e.getMessage() , e);
       throw new RuntimeException(e);
     }
 
@@ -110,7 +113,7 @@ public class ChangelogStrategy implements CLIStrategy {
       if (versioningStrategy.matches(semanticVersioningRegex)) {
         return versioningStrategy;
       } else {
-        System.out.println("Version flag must equal: `MAJOR`, `MINOR`, `PATCH`, or provide an explicit semantic version, e.g. 1.2.3");
+        log.info("Version flag must equal: `MAJOR`, `MINOR`, `PATCH`, or provide an explicit semantic version, e.g. 1.2.3");
         throw new RuntimeException("Unsupported Versioning Strategy");
       }
     }
@@ -136,7 +139,7 @@ public class ChangelogStrategy implements CLIStrategy {
     try {
       tags = gitClient.listTags();
     } catch (MissingObjectException | GitAPIException e) {
-      System.out.println("Unable to retrieve tags for the GIT repo due to: [" + e.getMessage() + "]");
+      log.error("Unable to retrieve tags for the GIT repo due to: [{}]", e.getMessage(), e);
       throw new RuntimeException(e);
     }
     Collections.reverse(tags);

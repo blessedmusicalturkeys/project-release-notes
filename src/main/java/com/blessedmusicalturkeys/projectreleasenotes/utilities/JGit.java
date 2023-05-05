@@ -16,6 +16,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.CheckoutCommand;
 import org.eclipse.jgit.api.CommitCommand;
 import org.eclipse.jgit.api.Git;
@@ -27,6 +28,8 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.transport.PushResult;
+import org.eclipse.jgit.transport.RemoteRefUpdate.Status;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.SshTransport;
 import org.eclipse.jgit.transport.Transport;
@@ -40,8 +43,10 @@ import org.eclipse.jgit.util.FS;
  *
  * @author Timothy Stratton
  */
+@Slf4j
 public class JGit {
 
+  public static final String REFS_TAGS = "refs/tags/";
   private final String gitPrivateKey;
   private final Git git;
   private final File workingDir;
@@ -64,13 +69,15 @@ public class JGit {
     String gitUsername = ApplicationConstants.CONST_GIT_USERNAME;
     String gitPassword = ApplicationConstants.CONST_GIT_PASSWORD;
 
-    if (this.gitPrivateKey != null && ApplicationConstants.CONST_GIT_REPOSITORY_URL != null
+    if (this.gitPrivateKey != null && !this.gitPrivateKey.isEmpty() && ApplicationConstants.CONST_GIT_REPOSITORY_URL != null
         && ApplicationConstants.CONST_GIT_REPOSITORY_URL.startsWith("git@")) { //ssh connection starts with `git@`
       git = Git.cloneRepository()
           .setDirectory(workingDir)
           .setTransportConfigCallback(new SshTransportConfigCallback())
           .setURI(ApplicationConstants.CONST_GIT_REPOSITORY_URL)
           .call();
+      log.info("Generating changelog from working branch [{}] with SSH Credentials", ApplicationConstants.CONST_GIT_WORKING_TRUNK_TO_BRANCH_FROM);
+
     } else if (gitUsername != null && gitPassword != null && ApplicationConstants.CONST_GIT_REPOSITORY_URL != null
         && ApplicationConstants.CONST_GIT_REPOSITORY_URL.startsWith("https://")){
       git = Git.cloneRepository()
@@ -80,16 +87,15 @@ public class JGit {
               new UsernamePasswordCredentialsProvider(ApplicationConstants.CONST_GIT_USERNAME,
                   ApplicationConstants.CONST_GIT_PASSWORD))
           .call();
+
+      log.info("Generating changelog from working branch [{}] with GIT User [{}]...", ApplicationConstants.CONST_GIT_WORKING_TRUNK_TO_BRANCH_FROM, ApplicationConstants.CONST_GIT_USERNAME);
     } else {
-      System.out.println("GIT usage:");
-      System.out.println();
-      System.out.println("    SSH or HTTPS only.");
-      System.out.println();
-      System.out.println("    For SSH:");
-      System.out.println("        Must provide env vars GIT_PRIVATE_KEY and GIT_REPO_URL. GIT_REPO_URL must start with `git@` for `git@<domain>/<repository>.git");
-      System.out.println();
-      System.out.println("    For HTTP:");
-      System.out.println("        Must provide env vars GIT_USERNAME, GIT_PASSWORD, and GIT_REPO_URL. GIT_REPO_URL must start with `https://` for `https://<domain>/<repository>.git");
+      log.info("GIT usage:");
+      log.info("    SSH or HTTPS only.");
+      log.info("    For SSH:");
+      log.info("        Must provide env vars GIT_PRIVATE_KEY and GIT_REPO_URL. GIT_REPO_URL must start with `git@` for `git@<domain>/<repository>.git");
+      log.info("    For HTTP:");
+      log.info("        Must provide env vars GIT_USERNAME, GIT_PASSWORD, and GIT_REPO_URL. GIT_REPO_URL must start with `https://` for `https://<domain>/<repository>.git");
 
       throw new RuntimeException("Unsupported GIT Operation");
     }
@@ -102,7 +108,7 @@ public class JGit {
 
     Iterable<RevCommit> commits = git.log().call();
     for (RevCommit commit : commits) {
-      Map<ObjectId, String> namedCommits = git.nameRev().addPrefix("refs/tags/").add(commit).call();
+      Map<ObjectId, String> namedCommits = git.nameRev().addPrefix(REFS_TAGS).add(commit).call();
       if (namedCommits.containsKey(commit.getId()) && !namedCommits.get(commit.getId())
           .contains("~")) {
         tags.add(namedCommits.get(commit.getId()));
@@ -112,7 +118,7 @@ public class JGit {
     return new ArrayList<>(tags);
   }
 
-  public List<String> getAllIssuesSenseLastTag()
+  public List<String> getAllIssuesSinceLastTag()
       throws GitAPIException, MissingObjectException {
     Set<String> issues = new LinkedHashSet<>();
     Date dateOfLastTag = null;
@@ -120,7 +126,7 @@ public class JGit {
     //retrieve the date of the last tag
     Iterable<RevCommit> commits = git.log().call();
     for (RevCommit commit : commits) {
-      Map<ObjectId, String> namedCommits = git.nameRev().addPrefix("refs/tags/").add(commit).call();
+      Map<ObjectId, String> namedCommits = git.nameRev().addPrefix(REFS_TAGS).add(commit).call();
       if (namedCommits.containsKey(commit.getId())) {
         dateOfLastTag = commit.getAuthorIdent().getWhen();
         break;
@@ -148,7 +154,7 @@ public class JGit {
 
     Iterable<RevCommit> commits = git.log().call();
     for (RevCommit commit : commits) {
-      Map<ObjectId, String> namedCommits = git.nameRev().addPrefix("refs/tags/").add(commit).call();
+      Map<ObjectId, String> namedCommits = git.nameRev().addPrefix(REFS_TAGS).add(commit).call();
       if (namedCommits.containsKey(commit.getId())
           && commit.getShortMessage().contains(CONST_MERGE_PREAMBLE)
           && namedCommits.get(commit.getId()).contains(tagName)
@@ -172,7 +178,7 @@ public class JGit {
       } catch (IndexOutOfBoundsException e) { /* nothing to be done, continue */ }
     }
 
-    System.out.println("Unable to parse Issue Number from commit: [" + commit.getShortMessage() + "]");
+    log.info("Unable to parse Issue Number from commit: [{}]", commit.getShortMessage());
     throw new RuntimeException("Unsupported Git Folder Structure");
   }
 
@@ -181,10 +187,34 @@ public class JGit {
 
     mergeChangelogBranchIntoWorkingTrunk(changelogBranchName);
 
-    git.push()
-        .setPushTags()
-        .setTransportConfigCallback(new SshTransportConfigCallback())
-        .call();
+    Iterable<PushResult> pushResults = null;
+    if (this.gitPrivateKey != null && !this.gitPrivateKey.isEmpty() && ApplicationConstants.CONST_GIT_REPOSITORY_URL != null
+        && ApplicationConstants.CONST_GIT_REPOSITORY_URL.startsWith("git@")) {
+      pushResults = git.push()
+          .setPushTags()
+          .setTransportConfigCallback(new SshTransportConfigCallback())
+          .call();
+    } else {
+      pushResults = git.push()
+          .setPushTags()
+          .setCredentialsProvider(new UsernamePasswordCredentialsProvider(ApplicationConstants.CONST_GIT_USERNAME,
+              ApplicationConstants.CONST_GIT_PASSWORD))
+          .call();
+    }
+
+    pushResults.forEach(pushResult -> {
+      pushResult.getRemoteUpdates().forEach(remoteRefUpdate -> {
+          if ((remoteRefUpdate.getStatus().compareTo(Status.UP_TO_DATE) == 0) //Ref is up to date
+              || (remoteRefUpdate.getStatus().compareTo(Status.OK) == 0)) { //Or Ref was updated successfully
+            log.info("Push Ref: [{}], Push Status: [{}], Push Message: [{}]...",
+                remoteRefUpdate.getRemoteName(), remoteRefUpdate.getStatus(), remoteRefUpdate.getMessage());
+          } else {
+            log.warn("Push Ref: [{}], Push Status: [{}], Push Error Message: [{}]...",
+                remoteRefUpdate.getRemoteName(), remoteRefUpdate.getStatus(), remoteRefUpdate.getMessage());
+          }
+        }
+      );
+    });
   }
 
   public void mergeChangelogBranchIntoWorkingTrunk(String changelogBranchName)
@@ -203,11 +233,13 @@ public class JGit {
         .setMessage("Merged in [" + changelogBranchName + "] to " + ApplicationConstants.CONST_GIT_WORKING_TRUNK_TO_BRANCH_FROM)
         .call();
 
+    log.info("Merge Successful: [{}], Merge Status: [{}]...", merge.getMergeStatus().isSuccessful(), merge.getMergeStatus());
+
     if (merge.getConflicts() != null) {//should not have conflict b/c of this trivial change
       for (Map.Entry<String, int[][]> entry : merge.getConflicts().entrySet()) {
-        System.out.println("Key: " + entry.getKey());
+        log.info("Key: [{}]", entry.getKey());
         for (int[] arr : entry.getValue()) {
-          System.out.println("value: " + Arrays.toString(arr));
+          log.info("value: [{}]", Arrays.toString(arr));
         }
       }
     }
