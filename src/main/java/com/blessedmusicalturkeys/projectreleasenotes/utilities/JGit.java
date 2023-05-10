@@ -208,19 +208,7 @@ public class JGit {
           .call();
     }
 
-    pushResults.forEach(pushResult -> {
-      pushResult.getRemoteUpdates().forEach(remoteRefUpdate -> {
-          if ((remoteRefUpdate.getStatus().compareTo(Status.UP_TO_DATE) == 0) //Ref is up to date
-              || (remoteRefUpdate.getStatus().compareTo(Status.OK) == 0)) { //Or Ref was updated successfully
-            log.info("Push Ref: [{}], Push Status: [{}], Push Message: [{}]...",
-                remoteRefUpdate.getRemoteName(), remoteRefUpdate.getStatus(), remoteRefUpdate.getMessage());
-          } else {
-            log.warn("Push Ref: [{}], Push Status: [{}], Push Error Message: [{}]...",
-                remoteRefUpdate.getRemoteName(), remoteRefUpdate.getStatus(), remoteRefUpdate.getMessage());
-          }
-        }
-      );
-    });
+    printPushResultStatus(pushResults);;
   }
 
   public void mergeChangelogBranchIntoWorkingTrunk(String changelogBranchName)
@@ -267,7 +255,40 @@ public class JGit {
     tagCommand.setName(releaseName);
     tagCommand.call();
 
+    Iterable<PushResult> pushResults = null;
+    if (this.gitPrivateKey != null && !this.gitPrivateKey.isEmpty() && ApplicationConstants.CONST_GIT_REPOSITORY_URL != null
+        && ApplicationConstants.CONST_GIT_REPOSITORY_URL.startsWith("git@")) {
+      pushResults = git.push()
+          .setPushTags()
+          .setTransportConfigCallback(new SshTransportConfigCallback())
+          .call();
+    } else {
+      pushResults = git.push()
+          .setPushTags()
+          .setCredentialsProvider(new UsernamePasswordCredentialsProvider(ApplicationConstants.CONST_GIT_USERNAME,
+              ApplicationConstants.CONST_GIT_PASSWORD))
+          .call();
+    }
+
+    printPushResultStatus(pushResults);
+
     return changelogBranchName;
+  }
+
+  private void printPushResultStatus(Iterable<PushResult> pushResults) {
+    pushResults.forEach(pushResult -> {
+      pushResult.getRemoteUpdates().forEach(remoteRefUpdate -> {
+            if ((remoteRefUpdate.getStatus().compareTo(Status.UP_TO_DATE) == 0) //Ref is up to date
+                || (remoteRefUpdate.getStatus().compareTo(Status.OK) == 0)) { //Or Ref was updated successfully
+              log.info("Push Ref: [{}], Push Status: [{}], Push Message: [{}]...",
+                  remoteRefUpdate.getRemoteName(), remoteRefUpdate.getStatus(), remoteRefUpdate.getMessage());
+            } else {
+              log.warn("Push Ref: [{}], Push Status: [{}], Push Error Message: [{}]...",
+                  remoteRefUpdate.getRemoteName(), remoteRefUpdate.getStatus(), remoteRefUpdate.getMessage());
+            }
+          }
+      );
+    });
   }
 
   public File getWorkingDir() {
