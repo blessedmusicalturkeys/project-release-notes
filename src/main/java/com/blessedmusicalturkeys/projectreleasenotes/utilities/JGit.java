@@ -29,6 +29,7 @@ import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.PushResult;
+import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.RemoteRefUpdate.Status;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.SshTransport;
@@ -47,6 +48,7 @@ import org.eclipse.jgit.util.FS;
 public class JGit {
 
   public static final String REFS_TAGS = "refs/tags/";
+  public static final String REFS_HEADS = "refs/heads/";
   private final String gitPrivateKey;
   private final Git git;
   private final File workingDir;
@@ -193,12 +195,16 @@ public class JGit {
       pushResults = git.push()
           .setPushTags()
           .setTransportConfigCallback(new SshTransportConfigCallback())
+          .setRefSpecs(new RefSpec(REFS_HEADS + ApplicationConstants.CONST_GIT_WORKING_TRUNK_TO_BRANCH_FROM))
+          .setForce(true)
           .call();
     } else {
       pushResults = git.push()
           .setPushTags()
           .setCredentialsProvider(new UsernamePasswordCredentialsProvider(ApplicationConstants.CONST_GIT_USERNAME,
               ApplicationConstants.CONST_GIT_PASSWORD))
+          .setRefSpecs(new RefSpec(ApplicationConstants.CONST_GIT_WORKING_TRUNK_TO_BRANCH_FROM))
+          .setForce(true)
           .call();
     }
 
@@ -230,7 +236,7 @@ public class JGit {
         .include(mergeBase)
         .setCommit(true)
         .setFastForward(MergeCommand.FastForwardMode.NO_FF)
-        .setMessage("Merged in [" + changelogBranchName + "] to " + ApplicationConstants.CONST_GIT_WORKING_TRUNK_TO_BRANCH_FROM)
+        .setMessage("Merged in [" + changelogBranchName + "] to [" + ApplicationConstants.CONST_GIT_WORKING_TRUNK_TO_BRANCH_FROM + "]")
         .call();
 
     log.info("Merge Successful: [{}], Merge Status: [{}]...", merge.getMergeStatus().isSuccessful(), merge.getMergeStatus());
