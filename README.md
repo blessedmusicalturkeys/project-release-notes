@@ -13,7 +13,7 @@ steps:
     image: maven:3.8.5-openjdk-17-slim
     commands:
       - mvn clean dependency:copy-dependencies
-      - java -cp target/dependency/project-release-notes-0.0.10.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication -c --incrementVersion=PATCH
+      - java -cp target/dependency/project-release-notes-0.1.0.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication -c --incrementVersion=PATCH
     environment:
       GIT_PRIVATE_KEY: ${GIT_PRIVATE_KEY}
       GIT_REPO_URL: ${GIT_REPO_URL}
@@ -30,7 +30,7 @@ steps:
 $ cd <project root directory wtih project-release-notes as a pom dependency>
 $ <export the necessary environment variables (see above drone variables), or have them setup in your environment already>
 $ mvn clean dependency:copy-dependencies
-$ java -cp target/dependency/project-release-notes-0.0.10.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication -c --incrementVersion=PATCH
+$ java -cp target/dependency/project-release-notes-0.1.0.jar com.blessedmusicalturkeys.projectreleasenotes.ProjectReleaseNotesApplication -c --incrementVersion=PATCH
 ```
 
 # Dependency
@@ -41,13 +41,13 @@ $ java -cp target/dependency/project-release-notes-0.0.10.jar com.blessedmusical
 <dependency>
   <groupId>io.github.blessedmusicalturkeys</groupId>
   <artifactId>project-release-notes</artifactId>
-  <version>0.0.10</version>
+  <version>0.1.0</version>
 </dependency>
 ```
 
 ## Gradle
 ```groovy
-compile group: 'io.github.blessedmusicalturkeys', name: 'project-release-notes', version: '0.0.10'
+compile group: 'io.github.blessedmusicalturkeys', name: 'project-release-notes', version: '0.1.0'
 ```
 
 # Shout Outs!

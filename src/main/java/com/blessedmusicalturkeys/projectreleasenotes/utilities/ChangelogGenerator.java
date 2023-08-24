@@ -47,11 +47,13 @@ public class ChangelogGenerator {
 
   public void writeChangeLog(File repoDir, String fileContent, boolean... prepend) throws IOException {
     File changelogDirectory = new File(repoDir.getAbsolutePath() + "/changelog");
-    boolean changelogDirExists = changelogDirectory.mkdirs();
+    changelogDirectory.mkdirs();
     File changelogFile = new File(changelogDirectory, "changelog.md");
-    boolean changelogFileExists = changelogFile.createNewFile();
+    if (!changelogFile.exists()) {
+      changelogFile.createNewFile();
+    }
 
-    if (changelogDirExists && !changelogFileExists && prepend != null && prepend[0]) {
+    if (prepend != null && prepend[0]) {
       FileInputStream fis = new FileInputStream(changelogFile);
       byte[] buffer = new byte[10];
       StringBuilder sb = new StringBuilder();
